@@ -1,5 +1,6 @@
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-waffle");
+require("hardhat-contract-sizer");
 require("hardhat-gas-reporter");
 require('dotenv').config();
 
@@ -79,5 +80,9 @@ module.exports = {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
     apiKey: process.env.BLOCKCHAIN_SCANNER_KEY
+  },
+  contractSizer: {
+    //see: https://www.npmjs.com/package/hardhat-contract-sizer
+    runOnCompile: true
   }
 };
