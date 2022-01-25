@@ -7,7 +7,7 @@ update these contracts without prior notification. Use at your own risk.
 
 The contracts defined here are to allow auditors to evaluate the code 
 that are being developed and specifically for the purpose of the 
-Gratitude NFT project. 
+Bad Baby Bear Bots NFT project. 
 
 Official Website: [https://www.badbabybearbots.com/](https://www.badbabybearbots.com/)
 White Paper: [https://docs.google.com/document/d/1WOZT4IzW9-pRdN9mGkqC4G8YFxXeuy-m9QvMcNw4_sE](https://docs.google.com/document/d/1WOZT4IzW9-pRdN9mGkqC4G8YFxXeuy-m9QvMcNw4_sE)
