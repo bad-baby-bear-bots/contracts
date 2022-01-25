@@ -77,7 +77,7 @@ contract BBBBMultisigWallet is
     //check if tx exists
     require(!txs[id].withdrawn, "Transaction already withdrawn");
     //require approver didnt already approve
-    require(!txs[id].approved[_msgSender()], "Sender has already approved");
+    require(!txs[id].approved[_msgSender()], "Approver has already approved");
     //add to the approval
     txs[id].approvals += 1; 
     txs[id].approved[_msgSender()] = true;
@@ -89,8 +89,8 @@ contract BBBBMultisigWallet is
   function tier(uint256 amount) public view virtual returns(uint8) {
     for (uint8 i = 1; i <= 4; i++) {
       //if amount is less than the max tier
-      if (amount < approvalTiers[i].max) {
-        return 1;
+      if (amount <= approvalTiers[i].max) {
+        return i;
       }
     }
 
@@ -121,8 +121,15 @@ contract BBBBMultisigWallet is
   ) public virtual onlyRole(REQUESTER_ROLE) {
     //check paused
     require(!paused(), "Requesting is paused");
+    //check if amount is less than the balance
+    require(amount <= address(this).balance, "Not enough funds");
     //check to see if tx exists
     require(txs[id].amount == 0, "Transaction exists");
+    //check for valud address
+    require(
+      beneficiary != address(0) && beneficiary != address(this), 
+      "Invalid beneficiary"
+    );
     //what tier level is this?
     uint8 level = tier(amount);
     //check to see if a tier is found
@@ -147,6 +154,21 @@ contract BBBBMultisigWallet is
   }
 
   /**
+   * @dev The Ether received will be logged with {PaymentReceived} 
+   * events. Note that these events are not fully reliable: it's 
+   * possible for a contract to receive Ether without triggering this 
+   * function. This only affects the reliability of the events, and not 
+   * the actual splitting of Ether.
+   *
+   * To learn more about this see the Solidity documentation for
+   * https://solidity.readthedocs.io/en/latest/contracts.html#fallback-function[fallback
+   * functions].
+   */
+  receive() external payable virtual {
+    //emit PaymentReceived(_msgSender(), msg.value);
+  }
+
+  /**
    * @dev Unpauses all token transfers.
    */
   function unpause() public virtual onlyRole(PAUSER_ROLE) {
@@ -157,8 +179,13 @@ contract BBBBMultisigWallet is
    * @dev Allows transactions to be withdrawn
    */
   function withdraw(uint256 id) external nonReentrant {
+    //check for approved funds
     require(txs[id].amount > 0, "Funds do not exist");
+    //check to see if withdrawn already
     require(!txs[id].withdrawn, "Funds are already withdrawn");
+    //check if amount is less than the balance
+    require(txs[id].amount <= address(this).balance, "Not enough funds");
+    //is it even approved?
     require(isApproved(id), "Request is not approved");
 
     //go ahead and transfer it
