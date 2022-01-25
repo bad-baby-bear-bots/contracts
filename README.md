@@ -2,7 +2,7 @@
 
 > WARNING: The contracts provided here are as is. BBBB does not 
 warrant that these will work on a live environment. It is possible 
-that these contracts are out dated and it is possible for Gratitude to 
+that these contracts are out dated and it is possible for BBBB to 
 update these contracts without prior notification. Use at your own risk.
 
 The contracts defined here are to allow auditors to evaluate the code 
