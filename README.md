@@ -28,7 +28,100 @@ sale and minting.
     is called, in which the starting image assigned will depend 
     on the last block number recorded.
 
-## 2. Auditing
+## 2. Self Regulation
+
+The following describes how the contracts will prevent any scams and/or
+rug pulls on our side.
+
+ 1. The `BadBabyBearBotsCollection.sol` has the BBBB multisig wallet 
+    and the DAO hard coded when deployed. In the `withdraw` function
+    the funds will be transferred to only these contracts and cannot 
+    change (immutable)
+ 2. The `BBBBMultisigWallet.sol` will be the only smart wallet used to 
+    disburse funds to suppliers. Requesters and approvers will be 
+    assigned at the discretion of BBBB. The wallet will prevent 
+    requests more than **20 ETH**
+ 2. The `BBBBDAOFI.sol` will be the only smart wallet used to disburse 
+    funds to NFT and blockchain projects. Requesters can only be BBBB 
+    and approvers can only be NFT holders. The wallet will prevent 
+    requests more than **5 ETH**
+
+### Preventing Rug Pulls from the Multisig Wallet
+
+Only 1 request per teir is allowed per respective cooldown. This means
+it would take at best 10 months to withdraw 465 ETH. 
+
+<pre>
+·------------------|------------|------------|----------------·
+| Threshold        · Approvers  · Cooldown   · Max per Month  |
+···················|············|············|·················
+| Up to 0.05 ETH   ·     1      · 1 day      · 1.5 ETH        |
+···················|············|············|·················
+| Up to 0.50 ETH   ·     2      · 3 days     · 5 ETH          |
+···················|············|············|·················
+| Up to 5.00 ETH   ·     3      · 7 days     · 20 ETH         |
+···················|············|············|·················
+| Up to 20.0 ETH   ·     4      · 30 days    · 20 ETH         |
+·------------------|------------|------------|----------------·
+| Total                                        46.5 ETH       |
+·------------------|------------|------------|----------------·
+</pre>
+
+All transactions have metadata with more information about each 
+transaction. It would look like the following. The total of the 
+amount should be equal to the request amount.
+
+```json
+[
+   {
+      "amount": "0.00001",
+      "beneficiary": "Netlify",
+      "purpose": "Serverless charge",
+      "website": "https://netlify.com",
+      "reference": 10000000
+   },
+   {
+      "amount": "0.05",
+      "beneficiary": "Designer A",
+      "purpose": "Payment for Invoice",
+      "reference": 10000001
+   }
+]
+```
+
+### Preventing Rug Pulls from the DAO
+
+The following table shows all the possible tier approvals.
+
+<pre>
+·------------------|------------·
+| Threshold        · Approvers  |
+···················|·············
+| Up to 0.1 ETH    ·     1      | 
+···················|·············
+| Up to 0.5 ETH    ·     2      |
+···················|·············
+| Up to 1.0 ETH    ·     3      |
+···················|·············
+| Up to 5.0 ETH    ·     4      |
+·------------------|------------·
+</pre>
+
+All transactions have metadata with more information about each 
+transaction. It would look like the following. The total of the 
+amount should be equal to the request amount.
+
+```json
+{
+   "amount": "0.1",
+   "beneficiary": "An external NFT Project",
+   "purpose": "Gas",
+   "website": "https://nft-example.com/",
+   "reference": 10000000
+}
+```
+
+## 3. Auditing
 
 ### Install
 
@@ -54,21 +147,31 @@ The following is an example gas report from the tests ran in this
 project and could change based on the cost of `ETH` itself.
 
 <pre>
-·------------------------------------------|---------------------------|-------------|-----------------------------·
-|           Solc version: 0.8.9            ·  Optimizer enabled: true  ·  Runs: 200  ·  Block limit: 12450000 gas  │
-···········································|···························|·············|······························
-|  Methods                                 ·              200 gwei/gas               ·       2374.70 usd/eth       │
-······························|············|·············|·············|·············|···············|··············
-|  Contract                   ·  Method    ·  Min        ·  Max        ·  Avg        ·  # calls      ·  usd (avg)  │
-······························|············|·············|·············|·············|···············|··············
-|  BadBabyBearBotsCollection  ·  mint      ·     158992  ·     277577  ·     218285  ·            2  ·     103.67  │
-······························|············|·············|·············|·············|···············|··············
-|  BadBabyBearBotsCollection  ·  withdraw  ·          -  ·          -  ·      64994  ·            1  ·      30.87  │
-······························|············|·············|·············|·············|···············|··············
-|  Deployments                             ·                                         ·  % of limit   ·             │
-···········································|·············|·············|·············|···············|··············
-|  BadBabyBearBotsCollection               ·          -  ·          -  ·    7066154  ·       56.8 %  ·    3356.00  │
-·------------------------------------------|-------------|-------------|-------------|---------------|-------------·
+·-------------------------------------------|---------------------------|-------------|-----------------------------·
+|            Solc version: 0.8.9            ·  Optimizer enabled: true  ·  Runs: 200  ·  Block limit: 12450000 gas  │
+············································|···························|·············|······························
+|  Methods                                  ·              200 gwei/gas               ·       2390.37 usd/eth       │
+······························|·············|·············|·············|·············|···············|··············
+|  Contract                   ·  Method     ·  Min        ·  Max        ·  Avg        ·  # calls      ·  usd (avg)  │
+······························|·············|·············|·············|·············|···············|··············
+|  BadBabyBearBotsCollection  ·  mint       ·     158992  ·     277577  ·     218285  ·            2  ·     104.36  │
+······························|·············|·············|·············|·············|···············|··············
+|  BadBabyBearBotsCollection  ·  withdraw   ·          -  ·          -  ·      64994  ·            1  ·      31.07  │
+······························|·············|·············|·············|·············|···············|··············
+|  BBBBMultisigWallet         ·  approve    ·      58044  ·      75144  ·      66594  ·            4  ·      31.84  │
+······························|·············|·············|·············|·············|···············|··············
+|  BBBBMultisigWallet         ·  grantRole  ·     101228  ·     118328  ·     104078  ·            6  ·      49.76  │
+······························|·············|·············|·············|·············|···············|··············
+|  BBBBMultisigWallet         ·  request    ·      81743  ·      86413  ·      84078  ·            2  ·      40.20  │
+······························|·············|·············|·············|·············|···············|··············
+|  BBBBMultisigWallet         ·  withdraw   ·          -  ·          -  ·      64891  ·            2  ·      31.02  │
+······························|·············|·············|·············|·············|···············|··············
+|  Deployments                              ·                                         ·  % of limit   ·             │
+············································|·············|·············|·············|···············|··············
+|  BadBabyBearBotsCollection                ·          -  ·          -  ·    7066154  ·       56.8 %  ·    3378.14  │
+············································|·············|·············|·············|···············|··············
+|  BBBBMultisigWallet                       ·          -  ·          -  ·    1944767  ·       15.6 %  ·     929.74  │
+·-------------------------------------------|-------------|-------------|-------------|---------------|-------------·
 </pre>
 
 ### Verifying Contracts
