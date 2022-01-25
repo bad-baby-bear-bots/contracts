@@ -14,10 +14,23 @@ contract BBBBMultisigWallet is
   AccessControlEnumerable, 
   ReentrancyGuard 
 {
+  // ============ Events ============
+
+  event FundsReceived(address sender, uint256 amount);
+  event FundsRequested(uint256 id);
+  event RequestCancelled(uint256 id);
+  event FundsApprovedFrom(address approver, uint256 id);
+  event FundsApproved(uint256 id);
+  event FundsWithdrawn(uint256 id);
+  
+  // ============ Constants ============
+
   //custom roles
   bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
   bytes32 public constant APPROVER_ROLE = keccak256("APPROVER_ROLE");
   bytes32 public constant REQUESTER_ROLE = keccak256("REQUESTER_ROLE");
+
+  // ============ Structures ============
 
   //approval structure
   struct Approval {
@@ -36,16 +49,22 @@ contract BBBBMultisigWallet is
     uint8 tier;
     address beneficiary;
     uint256 amount;
+    string uri;
     uint256 approvals;
     bool withdrawn;
+    bool cancelled;
     mapping(address => bool) approved;
   }
+
+  // ============ Storage ============
 
   //mapping of tier to approval
   mapping(uint8 => Approval) public approvalTiers;
 
   //mapping of id to tx
   mapping(uint256 => TX) public txs;
+
+  // ============ Deploy ============
 
   /**
    * @dev Sets up roles and sets the BUSD contract address 
@@ -68,19 +87,27 @@ contract BBBBMultisigWallet is
   }
 
   /**
-   * @dev Approves a transaction
+   * @dev The Ether received will be logged with {PaymentReceived} 
+   * events. Note that these events are not fully reliable: it's 
+   * possible for a contract to receive Ether without triggering this 
+   * function. This only affects the reliability of the events, and not 
+   * the actual splitting of Ether.
+   *
+   * To learn more about this see the Solidity documentation for
+   * https://solidity.readthedocs.io/en/latest/contracts.html#fallback-function[fallback
+   * functions].
    */
-  function approve(uint256 id) public virtual onlyRole(APPROVER_ROLE) {
-    require(!paused(), "Approving is paused");
-    //check if tx exists
-    require(txs[id].amount > 0, "Transaction does not exist");
-    //check if tx exists
-    require(!txs[id].withdrawn, "Transaction already withdrawn");
-    //require approver didnt already approve
-    require(!txs[id].approved[_msgSender()], "Approver has already approved");
-    //add to the approval
-    txs[id].approvals += 1; 
-    txs[id].approved[_msgSender()] = true;
+  receive() external payable virtual {
+    emit FundsReceived(_msgSender(), msg.value);
+  }
+
+  // ============ Read Methods ============
+
+  /**
+   * @dev Returns true if tx is approved
+   */
+  function isApproved(uint256 id) public view returns(bool) {
+    return txs[id].approvals >= approvalTiers[txs[id].tier].required;
   }
 
   /**
@@ -97,11 +124,53 @@ contract BBBBMultisigWallet is
     return 0;
   }
 
+  // ============ Write Methods ============
+
   /**
-   * @dev Returns true if tx is approved
+   * @dev Approves a transaction
    */
-  function isApproved(uint256 id) public view returns(bool) {
-    return txs[id].approvals >= approvalTiers[txs[id].tier].required;
+  function approve(uint256 id) public virtual onlyRole(APPROVER_ROLE) {
+    require(!paused(), "Approving is paused");
+    //check if tx exists
+    require(txs[id].amount > 0, "Request does not exist");
+    //check if cancelled
+    require(!txs[id].cancelled, "Request is cancelled");
+    //check if withdrawn
+    require(!txs[id].withdrawn, "Transaction already withdrawn");
+
+    address sender = _msgSender();
+    //require approver didnt already approve
+    require(!txs[id].approved[sender], "Approver has already approved");
+    //add to the approval
+    txs[id].approvals += 1; 
+    txs[id].approved[sender] = true;
+
+    //emit approved
+    emit FundsApprovedFrom(sender, id);
+
+    if (isApproved(id)) {
+      //emit approved
+      emit FundsApproved(id);
+    }
+  }
+
+  /**
+   * @dev Cancels a transaction request
+   */
+  function cancel(uint256 id) public virtual onlyRole(REQUESTER_ROLE) {
+    require(!paused(), "Approving is paused");
+    //check if tx exists
+    require(txs[id].amount > 0, "Request does not exist");
+    //check if cancelled
+    require(!txs[id].cancelled, "Request is already cancelled");
+    //check if approved
+    require(txs[id].approvals == 0, "Already in the approval process");
+    //okay cancel it
+    txs[id].cancelled = true;
+    //update the cooldown
+    approvalTiers[txs[id].tier].next = uint64(block.timestamp);
+    //emit cancelled
+    emit RequestCancelled(id);
   }
 
   /**
@@ -117,7 +186,8 @@ contract BBBBMultisigWallet is
   function request(
     uint256 id, 
     address beneficiary, 
-    uint256 amount
+    uint256 amount,
+    string memory uri
   ) public virtual onlyRole(REQUESTER_ROLE) {
     //check paused
     require(!paused(), "Requesting is paused");
@@ -140,9 +210,14 @@ contract BBBBMultisigWallet is
     require(timenow >= approvalTiers[level].next, "Tiered amount on cooldown");
 
     //create a new tx
+    txs[id].uri = uri;
     txs[id].tier = level;
     txs[id].amount = amount;
     txs[id].beneficiary = beneficiary;
+    
+    //emit funds requested before approved
+    emit FundsRequested(id);
+
     //if this sender is also an approver
     if (hasRole(APPROVER_ROLE, _msgSender())) {
       //then approve it
@@ -151,21 +226,6 @@ contract BBBBMultisigWallet is
 
     //update the next time they can make a request
     approvalTiers[level].next = timenow + approvalTiers[level].cooldown;
-  }
-
-  /**
-   * @dev The Ether received will be logged with {PaymentReceived} 
-   * events. Note that these events are not fully reliable: it's 
-   * possible for a contract to receive Ether without triggering this 
-   * function. This only affects the reliability of the events, and not 
-   * the actual splitting of Ether.
-   *
-   * To learn more about this see the Solidity documentation for
-   * https://solidity.readthedocs.io/en/latest/contracts.html#fallback-function[fallback
-   * functions].
-   */
-  receive() external payable virtual {
-    //emit PaymentReceived(_msgSender(), msg.value);
   }
 
   /**
@@ -191,5 +251,8 @@ contract BBBBMultisigWallet is
     //go ahead and transfer it
     txs[id].withdrawn = true;
     Address.sendValue(payable(txs[id].beneficiary), txs[id].amount);
+
+    //emit withdrawn
+    emit FundsWithdrawn(id);
   }
 }
