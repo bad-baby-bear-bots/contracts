@@ -10,6 +10,7 @@ that are being developed and specifically for the purpose of the
 Gratitude NFT project. 
 
 Official Website: [https://www.badbabybearbots.com/](https://www.badbabybearbots.com/)
+White Paper: [https://docs.google.com/document/d/1WOZT4IzW9-pRdN9mGkqC4G8YFxXeuy-m9QvMcNw4_sE](https://docs.google.com/document/d/1WOZT4IzW9-pRdN9mGkqC4G8YFxXeuy-m9QvMcNw4_sE)
 
 ## 1. Provenance Strategy
 
