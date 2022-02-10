@@ -58,13 +58,10 @@ contract BadBabyBearBotsCollection is ERC721Base, ReentrancyGuard {
     //make cid immutable
     PROVENANCE = cid;
     //set the initial base uri
-    _setBaseTokenURI(uri);
+    _setBaseURI(uri);
 
     //reserve bears
-    address recipient = _msgSender();
-    for(uint i = 0; i < 30; i++) {
-      _safeMint(recipient);
-    }
+    _safeMint(_msgSender(), 30);
   }
 
   // ============ Read Methods ============
@@ -81,7 +78,7 @@ contract BadBabyBearBotsCollection is ERC721Base, ReentrancyGuard {
    *   "fee_recipient": "0xA97F337c39cccE66adfeCB2BF99C1DdC54C2D721" # Where seller fees will be paid to.
    * }
    */
-  function contractURI() public view returns (string memory) {
+  function contractURI() public view returns(string memory) {
     //ex. https://ipfs.io/ipfs/ + Qm123abc + /contract.json
     return string(
       abi.encodePacked(baseTokenURI(), PROVENANCE, "/contract.json")
@@ -155,10 +152,7 @@ contract BadBabyBearBotsCollection is ERC721Base, ReentrancyGuard {
       "Amount exceeds total allowable collection"
     );
 
-    //loop through quantity and mint
-    for(uint i = 0; i < quantity; i++) {
-      _safeMint(recipient);
-    }
+    _safeMint(recipient, quantity);
   }
 
   /**
@@ -186,9 +180,9 @@ contract BadBabyBearBotsCollection is ERC721Base, ReentrancyGuard {
    * the changing of the base URI to toggle between services for faster 
    * speeds while keeping the metadata provably fair
    */
-  function setBaseTokenURI(string memory uri) 
+  function setBaseURI(string memory uri) 
     external virtual onlyRole(CURATOR_ROLE) 
   {
-    _setBaseTokenURI(uri);
+    _setBaseURI(uri);
   }
 }
