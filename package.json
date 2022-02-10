@@ -1,5 +1,4 @@
 {
-  "name": "gratitude-contracts",
   "private": true,
   "scripts": {
     "test": "hardhat test"
