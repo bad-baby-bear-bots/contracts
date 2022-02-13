@@ -28,6 +28,8 @@ contract BadBabyBearBotsCollection is ERC721Base, ReentrancyGuard {
   string public PROVENANCE;
   //the offset to be used to determine what token id should get which CID
   uint16 public indexOffset;
+  //mapping of address to amount minted
+  mapping(address => uint256) public minted;
   //the contract address of the DAO
   address public immutable DAO;
   //the contract address of the BBBB multisig wallet
@@ -134,10 +136,10 @@ contract BadBabyBearBotsCollection is ERC721Base, ReentrancyGuard {
       quantity = 1;
     }
 
-    //the quantity here plus the current balance 
+    //the quantity here plus the current amount already minted  
     //should be less than the max purchase amount
     require(
-      quantity.add(balanceOf(recipient)) <= MAX_PURCHASE, 
+      quantity.add(minted[recipient]) <= MAX_PURCHASE, 
       "Cannot mint more than allowed"
     );
     //the value sent should be the price times quantity
