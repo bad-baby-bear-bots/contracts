@@ -22,7 +22,7 @@ async function getSigners(name, ...params) {
   return signers
 }
 
-describe('BadBabyBearBotsCollection Tests', function () {
+describe('BadBabyBearBots Tests', function () {
   before(async function() {
     this.uri = 'https://gateway.pinata.cloud/ipfs/'
     this.cid = 'QmWeGPZFsKiYLNMuuwJcWCzAfHXuMN53FtwY4Wbij8ZVHG'
@@ -36,7 +36,7 @@ describe('BadBabyBearBotsCollection Tests', function () {
       tokenOwner1, 
       tokenOwner2
     ] = await getSigners(
-      'BadBabyBearBotsCollection',
+      'BadBabyBearBots',
       this.uri, 
       this.cid,
       signers[1].address,
@@ -63,14 +63,14 @@ describe('BadBabyBearBotsCollection Tests', function () {
     const { tokenOwner1 } = this.signers
     await expect(
       tokenOwner1.withContract.mint(3, { value: ethers.utils.parseEther('0.15') })
-    ).to.be.revertedWith('Sale has not started')
+    ).to.be.revertedWith('SaleNotStarted()')
   })
   
   it('Should error when getting token URI', async function () {
     const { contractOwner } = this.signers
     await expect(
       contractOwner.withContract.tokenURI(31)
-    ).to.be.revertedWith('URI query for nonexistent token')
+    ).to.be.revertedWith('NonExistentToken()')
   })
 
   it('Should time travel to April 1, 2022', async function () {  
@@ -92,7 +92,7 @@ describe('BadBabyBearBotsCollection Tests', function () {
     const { tokenOwner1 } = this.signers
     await expect(
       tokenOwner1.withContract.mint(3, { value: ethers.utils.parseEther('0.24') })
-    ).to.be.revertedWith('Cannot mint more than allowed')
+    ).to.be.revertedWith('InvalidAmount()')
   })
 
   it('Should withdraw', async function () {
